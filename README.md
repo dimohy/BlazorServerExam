@@ -1,5 +1,5 @@
 # BlazorServer - Exam
-`Exam은 Blazor Server를 이용해 반응형 웹 앱을 어떻게 만드는지 예를 들기 위해 만들었습니다. Exam은 BlazorServer 템플릿을 그대로 이용했으며, `안내`, `시험`, `시험결과`메뉴로 구성되어 있습니다.
+`Exam은 Blazor Server를 이용해 반응형 웹 앱을 어떻게 만드는지 예를 들기 위해 만들었습니다. Exam은 BlazorServer 템플릿을 그대로 이용했으며, `안내`, `시험`, `시험결과` 메뉴로 구성되어 있습니다.
 
 `GlobalContext`는 Singleton 서비스로 등록하여 각종 공통 인스턴스 및 접속한 수험생 Context를 유지합니다.
 `Context`는 수험생이 유지해야 할 컨텍스트이며, Scoped 서비스로 등록하여 유지합니다.
