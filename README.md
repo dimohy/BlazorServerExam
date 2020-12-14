@@ -24,5 +24,5 @@ Singleton 서비스는 웹 어플리케이션의 라이프사이클과 동일합
 ## 테스트를 위한 URL 접근 방법
 실제 수험생 접근용으로 사용했던 `GlobalContext`의 `ExamineeList` 목록 중 아무 Uuid를 이용해 `https://localhost:xxxx/23D5D90D-9461-4F68-AC43-46FA29213E29` 형태로 접근 후 확인할 수 있습니다.
 
-## 문제풀이 저장 및 복호화 위치
-wwwroot/answer에 {UUID}.json 형태로 저장되고 최초 연결 시 복호화 하여 Context에 정보를 보관합니다.
+## 문제풀이 저장
+wwwroot/answer에 {UUID}.json 형태로 저장되고 최초 연결 시 읽어서 Context에 정보를 보관합니다.
