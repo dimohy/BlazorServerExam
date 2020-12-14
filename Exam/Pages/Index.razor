@@ -1,0 +1,54 @@
+﻿@page "/{uuid?}"
+
+@using Markdig
+
+@inject Context Context
+
+
+<h2>기말고사 시험 안내</h2>
+
+<p></p>
+
+@if (Context.IsLogin == true)
+{
+    @((MarkupString)result)
+}
+
+@code {
+    [Parameter]
+    public string Uuid { get; set; } 
+
+
+    string markdown = @"
+### 시험시간
+
+|클래스|시작시각|종료시각|
+|------|--------|--------|
+|A반   |13:35   |16:15   |
+|B반   |09:55   |12:35   |
+
+### 일반
+- `8장 데이터베이스` 부터 `13장 정보보안` 까지 `객관식 50문제` (문제당 `2점`) 총 100점
+- `오픈북` 시험
+- `시작시각 30분 이후` 입장 학생은 시험을 치를 수 없습니다.
+- 문제를 다 푼 학생은 종료시각과 상관없이 구글밋에서 퇴장 할 수 있습니다.
+
+### 안내
+- 시작시각 이후 '`시험`' 메뉴를 통해 문제를 풀 수 있습니다. 종료시각 전까지 문제를 푼 후 '`제출`' 버튼을 누르면 제출이 됩니다.
+- 제출 상태를 '`시험결과`' 메뉴를 통해 확인 할 수 있습니다.
+- 시험결과는 당일 자정이후 '`시험결과`' 메뉴를 통해 확인할 수 있습니다.
+";
+    string result => Markdig.Markdown.ToHtml(markdown, new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build());
+
+    protected override void OnInitialized()
+    {
+        if (Context.IsLogin == false)
+            Context.Login(Uuid);
+
+        if (Context.IsLogin == false)
+        {
+            Context.GoErrorPage();
+            return;
+        }
+    }
+}

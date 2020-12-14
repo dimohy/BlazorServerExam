@@ -1,0 +1,104 @@
+﻿@page "/result"
+
+@using Markdig
+
+@inject GlobalContext GlobalContext
+@inject Context Context
+
+
+<h2>시험결과</h2>
+
+<p></p>
+
+@if (Context.IsLogin == true)
+{
+    @if (Context.AnswerPaper.IsSubmit == false)
+    {
+        <p>시험 답안지 미제출 상태입니다.</p>
+    }
+    else
+    {
+        @if (Context.IsResultTime == true)
+        {
+            <div class="container-fluid">
+                @{
+                    var num = 0;
+                    var score = 0;
+                }
+                @foreach (var question in GlobalContext.Questions)
+                {
+                    var ti = 'A';
+                    var answer = Context.AnswerPaper.AnswerList[question.Id];
+                    var correctQuestionItem = question.Items.FirstOrDefault(x => x.IsCorrect == true);
+
+                    num++;
+                    score += answer.AnswerId == correctQuestionItem.Id ? 2 : 0;
+
+                    <div class="row">
+                        <div class="col-1">
+                            @score
+                        </div>
+                        <div class="col-11">
+                            <div class="card mb-3" style="border-left-width: 3px; border-left-color: @(answer.AnswerId == correctQuestionItem.Id ? "green" : "red");">
+                                <div class="card-header">@(md($"{num}. {question.Content}"))</div>
+                                <div class="card-body text-dark">
+                                    @*<h5 class="card-title">Dark card title</h5>*@
+                                    @*<p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>*@
+                                    <div class="container-fluid">
+                                        <div class="row">
+                                            @foreach (var item in question.Items)
+                                            {
+                                                <div class="col-auto">
+                                                    @{
+                                                        var temp = ti;
+                                                    }
+                                                
+                                                    <Exam.Controls.RadioButton Name=@($"q{num}") Value=@($"{item.Id}") IsReadonly="true" IsChecked=@(item.Id == answer.AnswerId)>
+                                                        @if (item.IsCorrect == true)    
+                                                        {
+                                                            <b style="color: green">@(temp). @item.Content</b>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@(temp). @item.Content</span>
+                                                        }
+                                                    </Exam.Controls.RadioButton>
+                                                </div>
+                                                ti++;
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>시험 결과는 @Context.Examination.ResultTime 이후 공개됩니다.</p>
+        }
+    }
+}
+
+
+@code {
+    MarkdownPipeline pipeline = new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
+
+    
+    protected override void OnInitialized()
+    {
+        if (Context.IsLogin == false)
+        {
+            Context.GoErrorPage();
+            return;
+        }
+    }
+
+    /// 마크다운을 HTML로 변환한다.
+    MarkupString md(string markdown)
+    {
+        return (MarkupString)(Markdig.Markdown.ToHtml(markdown, pipeline));
+    }
+}

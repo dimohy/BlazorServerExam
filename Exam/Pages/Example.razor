@@ -1,0 +1,169 @@
+﻿@page "/exam"
+
+@using Markdig
+
+@inject GlobalContext GlobalContext
+@inject Context Context
+
+
+<h2>컴퓨터이해 기말고사</h2>
+
+<p></p>
+
+@if (Context.IsLogin == true)
+{
+    @if (Context.IsExaminationTime == true)
+    {
+        <div class="container-fluid">
+            @{
+                var num = 0;}
+            @foreach (var question in GlobalContext.Questions)
+            {
+                num++;
+                <div class="row">
+                    <div class="col">
+                        @{
+                            var ti = 'A';
+                            var answer = Context.AnswerPaper.AnswerList[question.Id];
+                        }
+                        <div class="card mb-3" style="border-left-width: 3px; border-left-color: @(answer.AnswerId is null ? "orange" : "green");">
+                            <div class="card-header">@(md($"{num}. {question.Content}"))</div>
+                            <div class="card-body text-dark">
+                                @*<h5 class="card-title">Dark card title</h5>*@
+                                @*<p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>*@
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        @foreach (var item in QuestionITems(question))
+                                        {
+                                            <div class="col-auto">
+                                                @{
+                                                    var temp = ti;}
+                                                @*
+                                                <Exam.Controls.RadioButton Name=@($"q{num}") Value=@($"{item.Id}") IsReadonly="false" IsChecked=@(item.IsCorrect)>
+                                                    @(temp). @item.Content
+                                                </Exam.Controls.RadioButton>
+                                                *@
+                                                <Exam.Controls.RadioButton Name=@($"q{num}") Value=@($"{item.Id}") IsReadonly=@(Context.AnswerPaper.IsSubmit) IsChecked=@(item.Id == answer.AnswerId) OnChanged=@(args => OnQuetionItemSelected(args, answer))>
+                                                    @(temp). @item.Content
+                                                </Exam.Controls.RadioButton>
+                                            </div>
+                                            ti++;
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <p class="text-center">
+            @if (isShowErrorMsg == true)
+            {
+                <div class="alert alert-danger">
+                    @errorMsg
+                </div>
+            }
+            else
+            {
+                @if (isClickSubmit == true)
+                {
+                    <button type="button" class="btn btn-success"  @onclick="OnClickSubmit">제출하겠습니다.</button>
+                    <button type="button" class="btn btn-secondary" @onclick="() => isClickSubmit = false">아니요.</button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-primary" @onclick="() => isClickSubmit = true" disabled=@(Context.AnswerPaper.IsSubmit == true)>제출</button>
+                }
+            }
+        </p>
+    }
+    else
+    {
+        <p>시험 시간이 아닙니다.</p>
+    }
+}
+
+@code {
+    MarkdownPipeline pipeline = new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build();
+
+    bool isClickSubmit;
+    bool isShowErrorMsg;
+    string errorMsg;
+    int[] questionItemIndexes;
+
+
+    protected override void OnInitialized()
+    {
+        // 로그인 하지 않았으므로 에러 페이지로 이동
+        if (Context.IsLogin == false)
+        {
+            Context.GoErrorPage();
+            return;
+        }
+
+        //  문항의 순서를 섞는다.
+        var random = new Random();
+        questionItemIndexes = new[] { 0, 1, 2, 3 };
+        for (var i = 0; i < questionItemIndexes.Length; i++)
+        {
+            var index = random.Next(0, questionItemIndexes.Length);
+            var temp = questionItemIndexes[0];
+            questionItemIndexes[0] = questionItemIndexes[index];
+            questionItemIndexes[index] = temp;
+        }
+    }
+
+    IEnumerable<QuestionItem> QuestionITems(Question Question)
+    {
+        foreach (var index in questionItemIndexes)
+            yield return Question.Items[index];
+    }
+    
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+
+    }
+
+    /// 제출 버튼 클릭 시 처리
+    void OnClickSubmit()
+    {
+        isClickSubmit = false;
+
+        // 문제를 풀지 않는게 있으면 메시지 띄움
+        if (Context.AnswerPaper.AnswerList.Any(x => x.Value.AnswerId is null) == true)
+        {
+            _ = Task.Run(async () =>
+                {
+                isShowErrorMsg = true;
+                errorMsg = "풀지 않은 문제가 있습니다.";
+                await InvokeAsync(() => StateHasChanged());
+                await Task.Delay(3000);
+                isShowErrorMsg = false;
+                await InvokeAsync(() => StateHasChanged());
+            });
+        }
+        // 모든 문제를 풀었으면 제출 처리한다.
+        else
+        {
+            Context.AnswerPaper.IsSubmit = true;
+            Context.AnswerPaper.SubmitTime = DateTime.Now;
+            Context.SaveAnswerPaper();
+        }
+    }
+
+    /// 마크다운을 HTML로 변환한다.
+    MarkupString md(string markdown)
+    {
+        return (MarkupString)(Markdig.Markdown.ToHtml(markdown, pipeline));
+    }
+
+    /// 선택한 문항을 답안지에 기록한다.
+    void OnQuetionItemSelected(ChangeEventArgs args, Answer answer)
+    {
+        answer.AnswerId = int.Parse("0" + args.Value);
+        Context.SaveAnswerPaper();
+    }
+}

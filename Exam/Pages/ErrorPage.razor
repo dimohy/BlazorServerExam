@@ -1,0 +1,17 @@
+﻿@page "/error"
+
+@using Markdig
+
+
+@((MarkupString)result)
+
+
+@code {
+    string markdown = @"
+## 오류가 발생하였습니다.
+
+- 학생마다 올바른 `접근 경로(URL)`가 있습니다. 그 경로로 다시 접근 바랍니다. 올바르게 접근했음에도 불구하고 문제가 있는 학생은 `구글 밋에서 문의` 해주세요.
+- 올바른 경로인 경우 `이미 연결된 페이지가` 있습니다. 그 페이지로 접근하거나 모두 창을 닫은 뒤 다시 연결해주세요.
+";
+    string result => Markdig.Markdown.ToHtml(markdown, new Markdig.MarkdownPipelineBuilder().UseAdvancedExtensions().UseBootstrap().Build());
+}

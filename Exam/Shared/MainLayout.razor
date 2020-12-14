@@ -1,0 +1,87 @@
+﻿@using System.Threading
+@inherits LayoutComponentBase
+
+@implements IDisposable
+
+@inject GlobalContext GlobalContext
+@inject Context Context
+
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <div class="main">
+        <div class="top-row px-4">
+            @if (Context.IsLogin == true)
+            {
+                <div class="col-auto">
+                    @{
+                        var e = @Context.Examinee;
+                    }
+                    <b>@(e.Class)반 @e.Id @e.Name</b>
+                </div>
+                @if (Context.AnswerPaper.IsSubmit == false)
+                {
+                    <div class="col-auto">
+                        @(Context.AnswerPaper.AnswerList.Count)문제 중 <b>@(Context.AnswerPaper.AnswerList.Count(x => x.Value.AnswerId is null))문제</b> 남음
+                    </div>
+                }
+                <div class="col-auto mr-auto">
+                    @(Context.AnswerPaper.SubmitTime is not null ? Context.AnswerPaper.SubmitTime : "") @(Context.AnswerPaper.IsSubmit == true ? "제출됨" : "제출전")
+                </div>
+                <div class="col-auto">
+                    @(GlobalContext.LoginContextMap.Count)명 참여
+                </div>
+                <div class="col-auto">
+                    시작: @(Context.Examination.StartTime.ToString("HH:mm"))
+                </div>
+                <div class="col-auto">
+                    종료: @(Context.Examination.EndTime.ToString("HH:mm"))
+                </div>
+            }
+            <div class="col-auto">
+                현재: @timerText
+            </div>
+        </div>
+
+        <div class="content px-4">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code {
+    CancellationTokenSource timerCts;
+    string timerText;
+
+    protected override void OnInitialized()
+    {
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender == true)
+        {
+            timerCts = new CancellationTokenSource();
+            _ = Task.Run(async () =>
+            {
+                while (timerCts.Token.IsCancellationRequested == false)
+                {
+                    timerText = DateTime.Now.ToString("HH:mm:ss");
+                    await InvokeAsync(() => StateHasChanged());
+                    await Task.Delay(1000, timerCts.Token);
+                }
+
+            }, timerCts.Token);
+        }
+    }
+
+    public void Dispose()
+    {
+        timerCts?.Cancel();
+
+        Context.Logout();
+    }
+}
